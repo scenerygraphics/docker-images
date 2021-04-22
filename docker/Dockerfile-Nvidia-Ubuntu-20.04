@@ -12,55 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#ARG CUDA_VERSION
-#FROM ubuntu:20.04 as vulkan-khronos
-#
-#RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Europe/Berlin apt-get install -y --no-install-recommends \
-#    build-essential \
-#    openjdk-11-jdk-headless \
-#    sudo \
-#    sed \
-#    curl \
-#    libgl1-mesa-glx \
-#    libvulkan1 \
-#    libvulkan-dev \
-#    vulkan-utils \
-#    ocl-icd-opencl-dev \
-#    clinfo \
-#    ca-certificates \
-#    cmake \
-#    git \
-#    libegl1-mesa-dev \
-#    libwayland-dev \
-#    libx11-xcb-dev \
-#    libxkbcommon-dev \
-#    libxrandr-dev \
-#    python3 \
-#    python3-distutils \
-#    wget && \
-#    rm -rf /var/lib/apt/lists/*
-#
-#ARG VULKAN_VERSION
-## Download and compile vulkan components
-#RUN wget -q https://sdk.lunarg.com/sdk/download/${VULKAN_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_VERSION}.tar.gz && \
-#    mkdir -p /opt/vulkan && \
-#    tar xfvz vulkansdk-linux-x86_64-${VULKAN_VERSION}.tar.gz -C /opt/vulkan && \
-#    chmod +x /opt/vulkan/${VULKAN_VERSION}/setup-env.sh && \
-#    /opt/vulkan/${VULKAN_VERSION}/setup-env.sh
-
-#RUN ln -s /usr/bin/python3 /usr/bin/python && \
-#    git clone https://github.com/KhronosGroup/Vulkan-ValidationLayers.git /opt/vulkan && \
-#    cd /opt/vulkan && git checkout "${VULKAN_VERSION}" && \
-#    mkdir build && cd build && ../scripts/update_deps.py && \
-#    cmake -C helper.cmake -DCMAKE_BUILD_TYPE=Release .. && \
-#    cmake --build . && make install && ldconfig && \
-#    mkdir -p /usr/local/lib && cp -a Vulkan-Loader/build/install/lib/* /usr/local/lib && \
-#    mkdir -p /usr/local/include/vulkan && cp -r Vulkan-Headers/build/install/include/vulkan/* /usr/local/include/vulkan && \
-#    mkdir -p /usr/local/share/vulkan/registry && \
-#    cp -r Vulkan-Headers/build/install/share/vulkan/registry/* /usr/local/share/vulkan/registry && \
-#    rm -rf /opt/vulkan
-
-
 FROM nvidia/cudagl:11.2.2-base-ubuntu20.04
 
 ENV NVIDIA_DRIVER_CAPABILITIES compute,graphics,utility
@@ -102,11 +53,6 @@ RUN wget -q https://sdk.lunarg.com/sdk/download/${VULKAN_VERSION}/linux/vulkansd
     /opt/vulkan/${VULKAN_VERSION}/setup-env.sh && \
     rm vulkansdk-linux-x86_64-*.tar.gz
 
-#COPY --from=vulkan-khronos /usr/local/bin /usr/local/bin
-#COPY --from=vulkan-khronos /usr/local/lib /usr/local/lib
-#COPY --from=vulkan-khronos /usr/local/include/vulkan /usr/local/include/vulkan
-#COPY --from=vulkan-khronos /usr/local/share/vulkan /usr/local/share/vulkan
-
 # Copy Nvidia ICD
 COPY nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json
 
@@ -114,3 +60,4 @@ COPY nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json
 RUN wget -q https://ulrik.is/scenery-demo-models.zip && \
     unzip -q scenery-demo-models.zip && \
     rm scenery-demo-models.zip
+
