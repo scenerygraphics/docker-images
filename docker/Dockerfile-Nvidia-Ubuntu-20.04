@@ -57,7 +57,6 @@ RUN wget -q https://sdk.lunarg.com/sdk/download/${VULKAN_VERSION}/linux/vulkansd
 COPY nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json
 
 # Download scenery example model files
-RUN wget -q https://ulrik.is/scenery-demo-models.zip && \
-    unzip -q scenery-demo-models.zip && \
-    rm scenery-demo-models.zip
-
+RUN wget -q https://ulrik.is/scenery-demo-models_2022-07-28.zip && \
+    unzip -q  scenery-demo-models_2022-07-28.zip && \
+    rm scenery-demo-models_2022-07-28.zip
