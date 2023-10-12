@@ -17,13 +17,13 @@ FROM nvidia/cudagl:11.2.2-base-ubuntu20.04
 ENV NVIDIA_DRIVER_CAPABILITIES compute,graphics,utility
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Europe/Berlin apt-get install -y --no-install-recommends \
+    ca-certificates \
     libx11-xcb-dev \
     libxkbcommon-dev \
     libwayland-dev \
     libxrandr-dev \
     libegl1-mesa-dev \
-    openjdk-11-jdk-headless \
-    openjdk-8-jdk-headless \
+    openjdk-17-jdk-headless \
     sudo \
     git \
     wget \
@@ -35,23 +35,30 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Europe/Berlin apt-get in
     vulkan-utils \
     ocl-icd-opencl-dev \
     unzip \
+    xz-utils \
     clinfo && \
     rm -rf /var/lib/apt/lists/*
 
-# Install current Node version, and Argos CLI client
-RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
-    apt-get install -qq --force-yes nodejs && \
-    npm install --save argos-cli && \
-    mkdir -p /etc/OpenCL/vendors && echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
+RUN sudo mkdir -p /etc/apt/keyrings
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+RUN sudo apt-get update
+RUN apt-get install -qq --force-yes nodejs -y
 
+# Install argos
+RUN npm install -g @argos-ci/cli
+
+# Link OpenCL ICD for Nvidia driver
+RUN mkdir -p /etc/OpenCL/vendors && echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
+    
 # Download current Vulkan SDK
 ARG VULKAN_VERSION
-RUN wget -q https://sdk.lunarg.com/sdk/download/${VULKAN_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_VERSION}.tar.gz && \
-    mkdir -p /opt/vulkan && \
-    tar xfz vulkansdk-linux-x86_64-${VULKAN_VERSION}.tar.gz -C /opt/vulkan && \
-    chmod +x /opt/vulkan/${VULKAN_VERSION}/setup-env.sh && \
-    /opt/vulkan/${VULKAN_VERSION}/setup-env.sh && \
-    rm vulkansdk-linux-x86_64-*.tar.gz
+RUN wget -q https://sdk.lunarg.com/sdk/download/${VULKAN_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_VERSION}.tar.xz
+RUN mkdir -p /opt/vulkan
+RUN tar xf vulkansdk-linux-x86_64-${VULKAN_VERSION}.tar.xz -C /opt/vulkan
+RUN chmod +x /opt/vulkan/${VULKAN_VERSION}/setup-env.sh
+RUN /opt/vulkan/${VULKAN_VERSION}/setup-env.sh
+RUN rm vulkansdk-linux-x86_64-*.tar.xz
 
 # Copy Nvidia ICD
 COPY nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json
@@ -60,3 +67,6 @@ COPY nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json
 RUN wget -q https://ulrik.is/scenery-demo-models_2022-07-28.zip && \
     unzip -q  scenery-demo-models_2022-07-28.zip && \
     rm scenery-demo-models_2022-07-28.zip
+
+# Source Vulkan SDK config
+ENV VULKAN_SDK_VERSION=${VULKAN_VERSION}
